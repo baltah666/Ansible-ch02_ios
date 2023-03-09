@@ -1,0 +1,15 @@
+---
+- name: "PLAY 1: Configure All Lan Switches"
+  hosts: lan
+  tags: lan
+  connection: network_cli
+  tasks:
+
+    - name: "P1T2: Configure Managment Static Routes"
+      ios_static_route:
+        prefix: "{{ item.prefix.split('/')[0] }}"
+        mask: "{{ item.prefix | ipv4('netmask') }}"
+        next_hop: "{{ item.next_hop }}"
+      loop: "{{ mgmt_static_routes }}"
+      register: ios_static_routes
+

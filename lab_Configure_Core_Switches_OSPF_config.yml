@@ -1,0 +1,24 @@
+- name: "PLAY 2: Configure Core Switches"
+  hosts: core
+  tags: l3_core
+  tasks:
+    - name: "P2T8: Configure OSPF"
+      ios_config:
+        parents: router ospf {{ ospf_process }}
+        lines:
+          - router-id {{ loopback_prefix | ipv4(hst_router_id) | ipaddr('address')}}
+
+    - name: "P2T9: Configure OSPF On Interfaces"
+      ios_config:
+        parents: interface {{ item.name }}
+        lines:
+          - ip ospf {{ ospf_process }} area {{ ospf_area }}
+          - ip ospf network point-to-point
+          - ip ospf cost {{item.ospf_metric | default(ospf_metric)}}
+      loop: "{{ (svi_interfaces + core_l3_links[inventory_hostname]) | selectattr('ospf') | list }}"
+
+    - name: "P2T10: Configure OSPF Passive Interfaces"
+      ios_config:
+        parents: router ospf {{ ospf_process }}
+        lines: passive-interface {{item.name}}
+      loop: "{{ (svi_interfaces + core_l3_links[inventory_hostname]) | selectattr('ospf','equalto','passive') | list }}"

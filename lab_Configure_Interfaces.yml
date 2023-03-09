@@ -1,0 +1,47 @@
+---
+- name: "PLAY 1: Configure All Lan Switches"
+  hosts: lan
+  tags: lan
+  connection: network_cli
+  tasks:
+
+    - name: "P1T3: Configure Interfaces"
+      ios_interface:
+        name: "{{ item.name }}"
+        description: "{{ item.description }}"
+        duplex: "{{ intf_duplex }}"
+#        mtu: "{{ intf_mtu }}"
+        state: up
+      loop: "{{ interfaces[inventory_hostname] }}"
+      register: ios_intf
+
+    - name: "P1T4: Create L2 VLANs"
+      ios_vlan:
+        vlan_id: "{{ item.vlan_id }}"
+        name: "{{ item.name  }}"
+      loop: "{{ vlans }}"
+      tags: vlan
+
+    - name: "P1T5: Configure L2 Trunks"
+      ios_l2_interface:
+        name: "{{ item.name }}"
+        mode: "{{ item.mode }}"
+        trunk_allowed_vlans: "{{ vlans | map(attribute='vlan_id') | join(',') }}"
+        state: present
+      loop: "{{ interfaces[inventory_hostname] | selectattr('mode','equalto','trunk') | list }}"
+
+    - name: "P1T6: Enable dot1q Trunks"
+      ios_config:
+        lines:
+          - switchport trunk encapsulation dot1q
+        parents: interface {{item.name}}
+      loop: "{{ interfaces[inventory_hostname] | selectattr('mode','equalto','trunk') | list }}"
+      tags: dot1q
+
+    - name: "P1T7: Configure Access Ports"
+      ios_l2_interface:
+        name: "{{ item.name }}"
+        mode: "{{ item.mode}}"
+        access_vlan: "{{ item.vlan }}"
+        state: present
+      loop: "{{ interfaces[inventory_hostname] | selectattr('mode','equalto','access') | list }}"
