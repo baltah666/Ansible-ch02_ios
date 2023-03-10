@@ -1,0 +1,10 @@
+---
+- name: Clear All Wan config
+  hosts: wan
+  tags: wan
+  connection: network_cli
+  tasks:
+    - import_tasks: "tasks/erase_config.yml"
+      vars:
+        INTERFACES: "{{ wan_l3_links[inventory_hostname] }}"
+        VLANS: "[]"

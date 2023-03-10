@@ -1,0 +1,9 @@
+---
+- name: Clear All Access config
+  hosts: access
+  connection: network_cli
+  tasks:
+    - import_tasks: "tasks/erase_config.yml"
+      vars:
+        INTERFACES: "{{interfaces[inventory_hostname]}}"
+        VLANS: "{{ vlans }}"
